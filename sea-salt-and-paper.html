@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sea Salt & Paper</title>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0a1628;--bg2:#112240;--ocean:#1a3a5c;--sand:#f4d9a0;--foam:#e8f0f8;
+  --coral:#ff6b6b;--teal:#4ecdc4;--gold:#ffd93d;--purple:#a855f7;--pink:#f472b6;
+  --green:#34d399;--blue:#60a5fa;--dark-blue:#2563eb;--orange:#fb923c;
+  --navy:#1e3a5f;
+  --ps:3px 3px 0 rgba(0,0,0,.55);--pb:2px solid #000;
+}
+body{font-family:'Press Start 2P',monospace;background:var(--bg);color:var(--foam);min-height:100vh;overflow-x:hidden;font-size:10px;}
+.ocean-bg{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;
+  background:linear-gradient(180deg,#0a1628 0%,#112240 40%,#1a3a5c 70%,#1e4a6e 100%);overflow:hidden;}
+.wave{position:absolute;bottom:0;left:-10%;width:120%;height:60px;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent 20px,rgba(78,205,196,.15) 20px,rgba(78,205,196,.15) 24px);
+  animation:waveMove 4s linear infinite;}
+.wave:nth-child(2){bottom:20px;opacity:.5;animation-duration:6s;animation-direction:reverse;}
+.wave:nth-child(3){bottom:40px;opacity:.3;animation-duration:8s;}
+@keyframes waveMove{from{transform:translateX(0)}to{transform:translateX(24px)}}
+.gc{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:10px;min-height:100vh;}
+/* BUTTONS */
+.btn{font-family:'Press Start 2P',monospace;font-size:13px;padding:14px 24px;
+  background:var(--teal);color:#000;border:var(--pb);cursor:pointer;
+  box-shadow:var(--ps);transition:all .1s;text-transform:uppercase;}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:4px 4px 0 rgba(0,0,0,.55);}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(0,0,0,.55);}
+.btn.red{background:var(--coral)}.btn.gold{background:var(--gold)}.btn.purple{background:var(--purple);color:#fff}
+.btn.green{background:var(--green)}.btn.sm{font-size:11px;padding:10px 16px}.btn.off{opacity:.35;pointer-events:none}
+.btn.wide{width:260px;text-align:center}
+/* PANEL */
+.panel{background:var(--bg2);border:var(--pb);box-shadow:var(--ps);padding:14px;}
+/* TITLE */
+.title-sc{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:24px;}
+.title-sc h1{font-size:26px;color:var(--teal);text-shadow:4px 4px 0 rgba(0,0,0,.6);text-align:center;line-height:1.7;}
+.title-sc .sub{font-size:9px;color:var(--sand);}
+.fish-anim{font-size:56px;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.menu-col{display:flex;flex-direction:column;gap:12px;align-items:center;}
+/* PLAYER SELECT */
+.psel{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;}
+.p-opts{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.popt{width:100px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;gap:8px;background:var(--bg2);border:3px solid var(--ocean);box-shadow:var(--ps);transition:all .15s;}
+.popt:hover,.popt.sel{border-color:var(--teal);background:var(--navy);}
+.popt .num{font-size:22px;color:var(--gold)}.popt .lbl{font-size:7px;}
+/* TOP BAR */
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+  background:rgba(17,34,64,.92);border:var(--pb);box-shadow:var(--ps);padding:8px 12px;}
+.pscore{display:flex;align-items:center;gap:8px;padding:4px 10px;border:2px solid transparent;}
+.pscore.act{border-color:var(--gold);background:rgba(255,217,61,.1);}
+.pscore .sname{font-size:12px}.pscore .sval{font-size:18px;color:var(--gold)}.pscore .srnd{font-size:10px;color:var(--teal);}
+/* GAME BOARD */
+.gboard{display:flex;flex-direction:column;gap:8px;padding-bottom:80px;}
+/* ===== CARDS ===== */
+.card{
+  width:200px;height:296px;border:var(--pb);box-shadow:var(--ps);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  cursor:pointer;transition:all .15s;position:relative;
+  padding:9px 8px 8px;overflow:hidden;border-radius:8px;
+  flex-shrink:0;
+}
+.card:hover:not(.nohov){transform:translate(-2px,-5px);box-shadow:5px 7px 0 rgba(0,0,0,.55);}
+.card.sel{outline:3px solid var(--gold);outline-offset:2px;}
+.card.glow-c{animation:glowA 1.4s ease-in-out infinite alternate;}
+@keyframes glowA{from{box-shadow:var(--ps)}to{box-shadow:0 0 14px var(--gold),var(--ps)}}
+/* Card color backgrounds */
+.cc-darkblue{background:linear-gradient(160deg,#1e3a8a,#1e40af);color:#fff}
+.cc-lightblue{background:linear-gradient(160deg,#2563eb,#60a5fa);color:#fff}
+.cc-black{background:linear-gradient(160deg,#1f2937,#374151);color:#fff}
+.cc-yellow{background:linear-gradient(160deg,#b45309,#fbbf24);color:#1a1200}
+.cc-green{background:linear-gradient(160deg,#065f46,#10b981);color:#fff}
+.cc-white{background:linear-gradient(160deg,#c7d8eb,#f0f4f8);color:#000}
+.cc-purple{background:linear-gradient(160deg,#6d28d9,#a855f7);color:#fff}
+.cc-gray{background:linear-gradient(160deg,#374151,#9ca3af);color:#fff}
+.cc-orange{background:linear-gradient(160deg,#9a3412,#fb923c);color:#fff}
+.cc-pink{background:linear-gradient(160deg,#9d174d,#f472b6);color:#fff}
+.cc-teal{background:linear-gradient(160deg,#0f766e,#2dd4bf);color:#fff}
+/* Card header */
+.card-hdr{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+.ctag{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.3px;}
+.cbadge{font-size:16px;font-weight:bold;background:rgba(0,0,0,.38);border-radius:2px;padding:3px 6px;border:1px solid rgba(255,255,255,.25);}
+/* Big icon + name */
+.cico{font-size:56px;line-height:1;margin-bottom:4px;}
+.cnm{font-size:12px;text-align:center;font-weight:bold;margin-bottom:4px;letter-spacing:.3px;}
+/* DUO effect strip */
+.duo-strip{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.32);border-radius:3px;padding:6px 8px;width:100%;margin-top:4px;}
+.duo-strip .dp{font-size:18px;line-height:1;}
+.duo-strip .dt{font-size:10px;flex:1;text-align:center;line-height:1.4;opacity:.9;}
+/* Collector scoring track */
+.strack{width:100%;display:flex;flex-direction:column;gap:3px;margin-top:4px;}
+.srow{display:flex;justify-content:space-between;align-items:center;
+  background:rgba(0,0,0,.25);border-radius:2px;padding:4px 6px;font-size:12px;}
+.srow.cur{background:rgba(255,210,0,.45);border:1px solid rgba(255,210,0,.7);}
+.srow .sdots{font-size:12px;}
+.srow .spts{font-size:14px;font-weight:bold;}
+/* Multiplier body */
+.mbody{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;margin-top:4px;}
+.mline{font-size:12px;text-align:center;line-height:1.6;background:rgba(0,0,0,.3);border-radius:3px;padding:4px 6px;width:100%;}
+/* Mermaid body */
+.mmerbody{font-size:12px;text-align:center;line-height:1.6;margin-top:4px;background:rgba(0,0,0,.22);border-radius:3px;padding:6px;}
+/* Deck card */
+.card.facedown{
+  background:repeating-linear-gradient(135deg,#1e3a5f 0,#1e3a5f 6px,#162d4a 6px,#162d4a 12px);
+  border:3px solid var(--teal);
+}
+.fd-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px;}
+.fd-ico{font-size:52px;}.fd-cnt{font-size:20px;color:var(--gold);}
+/* Small card variants — hide detail body */
+.card.sm-c{width:136px;height:200px;}
+.card.sm-c .cico{font-size:38px;}.card.sm-c .cnm{font-size:8px;}
+.card.sm-c .strack,.card.sm-c .duo-strip,.card.sm-c .mbody,.card.sm-c .mmerbody{display:none}
+.card.sm-c .cbadge{font-size:10px;}
+.card.xs-c{width:104px;height:152px;}
+.card.xs-c .cico{font-size:30px;}.card.xs-c .cnm{font-size:6px;}
+.card.xs-c .strack,.card.xs-c .duo-strip,.card.xs-c .mbody,.card.xs-c .mmerbody{display:none}
+.card.xs-c .card-hdr{margin-bottom:0}
+/* CENTER AREA */
+.ctr{display:flex;justify-content:center;align-items:center;gap:20px;padding:12px;flex-wrap:wrap;}
+.dpile{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.dpile .plbl{font-size:12px;color:var(--sand);}
+.empty-pile{width:200px;height:296px;border:2px dashed var(--ocean);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--ocean);}
+/* OPPONENT PANELS */
+.opp-area{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.opp-panel{background:rgba(17,34,64,.72);border:var(--pb);padding:8px;min-width:140px;flex:1;max-width:340px;}
+.opp-panel.opp-act{border-color:var(--gold);}
+.opp-nm{font-size:12px;color:var(--sand);margin-bottom:6px;}
+.opp-hc{font-size:11px;color:var(--foam);margin-bottom:6px;}
+.opp-pts{font-size:11px;color:var(--gold);margin-bottom:6px;}
+.opp-cards{display:flex;flex-wrap:wrap;gap:3px;}
+/* HAND AREA */
+.hand-area{background:rgba(17,34,64,.85);border:var(--pb);box-shadow:var(--ps);padding:10px;}
+.hand-lbl{font-size:13px;color:var(--sand);margin-bottom:10px;display:block;}
+.card-row{display:flex;flex-wrap:wrap;gap:10px;}
+.played-zone{background:rgba(26,58,92,.45);border:2px dashed var(--ocean);padding:10px;margin-bottom:10px;border-radius:4px;}
+.pz-lbl{font-size:11px;color:var(--teal);margin-bottom:6px;display:block;}
+/* STATUS BAR */
+.statusbar{background:rgba(0,0,0,.6);border:var(--pb);padding:14px 18px;text-align:center;
+  font-size:13px;line-height:1.8;min-height:56px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;}
+/* ACTION BUTTONS */
+.actbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:5px 0;}
+/* STOP/LAST CHANCE BAR */
+.stop-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(17,34,64,.95);border-top:var(--pb);box-shadow:var(--ps);
+  padding:10px;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;z-index:10;}
+.stop-bar .pts-display{font-size:14px;color:var(--gold);margin-right:8px;}
+/* MODAL */
+.ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.82);z-index:100;
+  display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal{background:var(--bg2);border:3px solid var(--teal);box-shadow:6px 6px 0 rgba(0,0,0,.6);
+  padding:22px;max-width:540px;width:100%;text-align:center;max-height:90vh;overflow-y:auto;}
+.modal h2{font-size:18px;color:var(--gold);margin-bottom:16px;}
+.modal p{font-size:12px;line-height:1.9;margin-bottom:12px;}
+.score-tbl{width:100%;border-collapse:collapse;margin:10px 0;}
+.score-tbl td{padding:7px 10px;font-size:12px;text-align:left;border-bottom:1px solid var(--ocean);}
+.score-tbl .win-row td{color:var(--gold);}
+/* ZOOM CARD MODAL */
+.zoom-ovl{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:200;
+  display:flex;align-items:center;justify-content:center;padding:16px;}
+.zoom-card-container{position:relative;}
+.card.zoom-card{
+  width:300px;height:444px;
+}
+.card.zoom-card .cico{font-size:80px;}
+.card.zoom-card .cnm{font-size:14px;}
+.card.zoom-card .ctag{font-size:10px;}
+.card.zoom-card .cbadge{font-size:16px;}
+.card.zoom-card .duo-strip{padding:8px 10px;}
+.card.zoom-card .duo-strip .dp{font-size:22px;}
+.card.zoom-card .duo-strip .dt{font-size:11px;}
+.card.zoom-card .strack{margin-top:6px;}
+.card.zoom-card .srow{padding:5px 8px;font-size:12px;}
+.card.zoom-card .srow .sdots{font-size:13px;}
+.card.zoom-card .srow .spts{font-size:14px;}
+.card.zoom-card .mbody{gap:5px;margin-top:6px;}
+.card.zoom-card .mline{font-size:12px;padding:5px 8px;}
+.card.zoom-card .mmerbody{font-size:12px;padding:7px;}
+/* PASS SCREEN */
+.pass-sc{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;}
+/* ONLINE TEXT INPUT */
+.txt-inp{font-family:'Press Start 2P',monospace;font-size:11px;padding:12px 16px;
+  background:var(--bg2);border:2px solid var(--ocean);color:var(--foam);width:100%;box-sizing:border-box;}
+.txt-inp:focus{outline:none;border-color:var(--teal);}
+.txt-inp::placeholder{opacity:.45;}
+/* ONLINE LOBBY */
+.lobby-row{background:rgba(26,58,92,.6);border:1px solid var(--ocean);padding:10px 14px;font-size:11px;}
+.room-code-box{font-size:20px;color:var(--gold);letter-spacing:3px;background:rgba(0,0,0,.45);
+  padding:12px 24px;border:2px solid var(--gold);cursor:pointer;text-align:center;word-break:break-all;}
+/* TOAST */
+.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);
+  background:var(--navy);border:var(--pb);box-shadow:var(--ps);
+  padding:12px 22px;font-size:13px;z-index:200;color:var(--gold);
+  animation:tIn .25s ease,tOut .3s ease 2.2s forwards;white-space:nowrap;}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-18px)}}
+@keyframes tOut{to{opacity:0;transform:translateX(-50%) translateY(-18px)}}
+/* RULES */
+.rules-sc{max-width:720px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.rules-sc h2{font-size:13px;color:var(--teal);}
+.rules-sc h3{font-size:9px;color:var(--gold);margin-bottom:6px;}
+.rules-sc p,.rules-sc li{font-size:7px;line-height:2.1;margin-bottom:4px;}
+.rules-sc ul{list-style:none;padding-left:14px;}
+.rules-sc ul li::before{content:"▸ ";color:var(--teal);}
+.ref-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:7px;margin:6px 0;}
+.ref-item{background:rgba(26,58,92,.5);border:1px solid var(--ocean);padding:6px;font-size:6px;line-height:1.8;border-radius:3px;}
+.ref-item .ri{font-size:14px;margin-bottom:3px;}
+/* THINKING DOTS */
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+.dots span{animation:blink 1.4s infinite}.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+/* Crab browse */
+.crab-browser{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:300px;overflow-y:auto;padding:6px;}
+@media(max-width:680px){
+  .card{width:150px;height:222px;}.card .cico{font-size:42px;}
+  .title-sc h1{font-size:18px;}.btn{font-size:8px;padding:8px 12px;}
+}
+</style>
+</head>
+<body>
+<div class="ocean-bg"><div class="wave"></div><div class="wave"></div><div class="wave"></div></div>
+<div class="gc" id="app"></div>
+<script>
+/* ============================================================
+   SEA SALT & PAPER — faithful web implementation
+   Based on official rulebook by Bruno Cathala & Théo Rivière
+   ============================================================ */
+
+/* ===== CARD TYPE CONSTANTS ===== */
+const T = {
+  CRAB:'crab', BOAT:'boat', FISH:'fish', SWIMMER:'swimmer', SHARK:'shark',
+  SHELL:'shell', OCTOPUS:'octopus', PENGUIN:'penguin', SAILOR:'sailor',
+  LIGHTHOUSE:'lighthouse', SHOAL:'shoal', PENGUIN_COL:'penguincol', CAPTAIN:'captain',
+  MERMAID:'mermaid'
+};
+
+const ICONS = {
+  [T.CRAB]:'🦀',[T.BOAT]:'⛵',[T.FISH]:'🐟',[T.SWIMMER]:'🏊',[T.SHARK]:'🦈',
+  [T.SHELL]:'🐚',[T.OCTOPUS]:'🐙',[T.PENGUIN]:'🐧',[T.SAILOR]:'⚓',
+  [T.LIGHTHOUSE]:'🗼',[T.SHOAL]:'🐠',[T.PENGUIN_COL]:'🏔️',[T.CAPTAIN]:'🎖️',
+  [T.MERMAID]:'🧜'
+};
+const NAMES = {
+  [T.CRAB]:'Crab',[T.BOAT]:'Boat',[T.FISH]:'Fish',[T.SWIMMER]:'Swimmer',[T.SHARK]:'Shark',
+  [T.SHELL]:'Shell',[T.OCTOPUS]:'Octopus',[T.PENGUIN]:'Penguin',[T.SAILOR]:'Sailor',
+  [T.LIGHTHOUSE]:'Lighthouse',[T.SHOAL]:'Shoal',[T.PENGUIN_COL]:'Colony',[T.CAPTAIN]:'Captain',
+  [T.MERMAID]:'Mermaid'
+};
+
+// Duo pairing rules
+const DUO_MATCH = {
+  [T.CRAB]:T.CRAB,[T.BOAT]:T.BOAT,[T.FISH]:T.FISH,
+  [T.SWIMMER]:T.SHARK,[T.SHARK]:T.SWIMMER
+};
+const isDuo = t => t in DUO_MATCH;
+const isCollector = t => [T.SHELL,T.OCTOPUS,T.PENGUIN,T.SAILOR].includes(t);
+const isMulti = t => [T.LIGHTHOUSE,T.SHOAL,T.PENGUIN_COL,T.CAPTAIN].includes(t);
+
+// Collector scoring tables: index = # of that card owned
+const COLL_SCORE = {
+  [T.SHELL]:  [0,0,2,4,6,8,10],   // 1=0, 2=2, 3=4, 4=6, 5=8, 6=10
+  [T.OCTOPUS]:[0,0,3,6,9,12],      // 1=0, 2=3, 3=6, 4=9, 5=12
+  [T.PENGUIN]:[0,1,3,5],            // 1=1, 2=3, 3=5
+  [T.SAILOR]: [0,0,5]               // 1=0, 2=5
+};
+
+/* ===== 58-CARD DECK (exact counts from rulebook) =====
+   Crab×9, Boat×8, Fish×7, Swimmer×5, Shark×5 = 34
+   Shell×6, Octopus×5, Penguin×3, Sailor×2    = 16
+   Lighthouse×1, Shoal×1, Colony×1, Captain×1  =  4
+   Mermaid×4                                    =  4
+   Total = 58 ✓                                           */
+const DECK_DEF = [
+  // CRAB ×9
+  {t:T.CRAB,c:'darkblue'},{t:T.CRAB,c:'darkblue'},{t:T.CRAB,c:'darkblue'},
+  {t:T.CRAB,c:'lightblue'},{t:T.CRAB,c:'lightblue'},{t:T.CRAB,c:'lightblue'},
+  {t:T.CRAB,c:'green'},{t:T.CRAB,c:'green'},{t:T.CRAB,c:'black'},
+  // BOAT ×8
+  {t:T.BOAT,c:'yellow'},{t:T.BOAT,c:'yellow'},{t:T.BOAT,c:'yellow'},
+  {t:T.BOAT,c:'darkblue'},{t:T.BOAT,c:'darkblue'},
+  {t:T.BOAT,c:'orange'},{t:T.BOAT,c:'orange'},{t:T.BOAT,c:'black'},
+  // FISH ×7
+  {t:T.FISH,c:'green'},{t:T.FISH,c:'green'},
+  {t:T.FISH,c:'lightblue'},{t:T.FISH,c:'lightblue'},
+  {t:T.FISH,c:'pink'},{t:T.FISH,c:'pink'},{t:T.FISH,c:'yellow'},
+  // SWIMMER ×5
+  {t:T.SWIMMER,c:'purple'},{t:T.SWIMMER,c:'purple'},
+  {t:T.SWIMMER,c:'lightblue'},{t:T.SWIMMER,c:'lightblue'},{t:T.SWIMMER,c:'teal'},
+  // SHARK ×5
+  {t:T.SHARK,c:'darkblue'},{t:T.SHARK,c:'darkblue'},
+  {t:T.SHARK,c:'gray'},{t:T.SHARK,c:'gray'},{t:T.SHARK,c:'black'},
+  // SHELL ×6
+  {t:T.SHELL,c:'pink'},{t:T.SHELL,c:'pink'},
+  {t:T.SHELL,c:'orange'},{t:T.SHELL,c:'orange'},
+  {t:T.SHELL,c:'green'},{t:T.SHELL,c:'green'},
+  // OCTOPUS ×5
+  {t:T.OCTOPUS,c:'purple'},{t:T.OCTOPUS,c:'purple'},
+  {t:T.OCTOPUS,c:'orange'},{t:T.OCTOPUS,c:'orange'},{t:T.OCTOPUS,c:'lightblue'},
+  // PENGUIN ×3
+  {t:T.PENGUIN,c:'black'},{t:T.PENGUIN,c:'black'},{t:T.PENGUIN,c:'gray'},
+  // SAILOR ×2
+  {t:T.SAILOR,c:'darkblue'},{t:T.SAILOR,c:'darkblue'},
+  // MULTIPLIERS ×1 each
+  {t:T.LIGHTHOUSE,c:'yellow'},
+  {t:T.SHOAL,c:'teal'},
+  {t:T.PENGUIN_COL,c:'black'},
+  {t:T.CAPTAIN,c:'darkblue'},
+  // MERMAID ×4
+  {t:T.MERMAID,c:'white'},{t:T.MERMAID,c:'white'},
+  {t:T.MERMAID,c:'white'},{t:T.MERMAID,c:'white'},
+];
+
+/* ===== UTILITIES ===== */
+const shuffle = a => {
+  const r=[...a];
+  for(let i=r.length-1;i>0;i--){const j=0|Math.random()*(i+1);[r[i],r[j]]=[r[j],r[i]];}
+  return r;
+};
+const makeCard = (def,id) => ({...def, id, icon:ICONS[def.t], name:NAMES[def.t], type:def.t, color:def.c});
+const createDeck = () => shuffle(DECK_DEF.map((d,i)=>makeCard(d,i)));
+const getAllCards = p => [...p.hand,...p.played];
+const countType = (cards,type) => cards.filter(c=>c.type===type).length;
+
+/* ===== SCORING ===== */
+function getDuoScore(cards) {
+  let s=0;
+  for(const t of [T.CRAB,T.BOAT,T.FISH]) s += Math.floor(countType(cards,t)/2)*1;
+  // Swimmer+Shark: each matching pair = 1pt
+  s += Math.min(countType(cards,T.SWIMMER), countType(cards,T.SHARK)) * 1;
+  return s;
+}
+function getCollectorScore(cards) {
+  let s=0;
+  for(const t of [T.SHELL,T.OCTOPUS,T.PENGUIN,T.SAILOR]) {
+    const n = countType(cards,t);
+    const tbl = COLL_SCORE[t];
+    s += tbl[Math.min(n, tbl.length-1)];
+  }
+  return s;
+}
+function getMultiScore(cards) {
+  let s=0;
+  if(cards.some(c=>c.type===T.LIGHTHOUSE)) s += countType(cards,T.BOAT)*1;
+  if(cards.some(c=>c.type===T.SHOAL))      s += countType(cards,T.FISH)*1;
+  if(cards.some(c=>c.type===T.PENGUIN_COL))s += countType(cards,T.PENGUIN)*2;
+  if(cards.some(c=>c.type===T.CAPTAIN))    s += countType(cards,T.SAILOR)*3;
+  return s;
+}
+function getMermaidScore(cards) {
+  const ms = cards.filter(c=>c.type===T.MERMAID);
+  if(!ms.length) return 0;
+  const nonM = cards.filter(c=>c.type!==T.MERMAID);
+  const cc={};
+  for(const c of nonM) cc[c.color]=(cc[c.color]||0)+1;
+  const sorted = Object.entries(cc).sort((a,b)=>b[1]-a[1]);
+  let pts=0; const used=new Set();
+  for(let i=0;i<ms.length;i++) {
+    for(const[col,cnt] of sorted) {
+      if(!used.has(col)){pts+=cnt;used.add(col);break;}
+    }
+  }
+  return pts;
+}
+function getColorBonus(cards) {
+  const cc={};
+  for(const c of cards) cc[c.color]=(cc[c.color]||0)+1;
+  return Math.max(0,...Object.values(cc));
+}
+function getCardScore(p) {
+  const cards=getAllCards(p);
+  return getDuoScore(cards)+getCollectorScore(cards)+getMultiScore(cards)+getMermaidScore(cards);
+}
+
+/* ===== AI ===== */
+function cardValue(card, existingCards) {
+  if(!card) return -1;
+  if(card.type===T.MERMAID) return 8;
+  if(isDuo(card.type)) {
+    return existingCards.some(c=>c.type===DUO_MATCH[card.type]&&c.id!==card.id) ? 10 : 3;
+  }
+  if(isCollector(card.type)) return Math.min(countType(existingCards,card.type)+2, 6);
+  if(isMulti(card.type)) {
+    const pmap={[T.LIGHTHOUSE]:T.BOAT,[T.SHOAL]:T.FISH,[T.PENGUIN_COL]:T.PENGUIN,[T.CAPTAIN]:T.SAILOR};
+    return countType(existingCards,pmap[card.type])*2;
+  }
+  return 1;
+}
+
+function aiFindDuos(hand) {
+  const duos=[]; const used=new Set();
+  for(const t of [T.CRAB,T.BOAT,T.FISH]) {
+    const cs=hand.filter(c=>c.type===t&&!used.has(c.id));
+    for(let i=0;i+1<cs.length;i+=2){duos.push([cs[i],cs[i+1]]);used.add(cs[i].id);used.add(cs[i+1].id);}
+  }
+  const sws=hand.filter(c=>c.type===T.SWIMMER&&!used.has(c.id));
+  const shs=hand.filter(c=>c.type===T.SHARK&&!used.has(c.id));
+  for(let i=0;i<Math.min(sws.length,shs.length);i++){duos.push([sws[i],shs[i]]);used.add(sws[i].id);used.add(shs[i].id);}
+  return duos;
+}
+
+const isValidDuo = (c1,c2) => DUO_MATCH[c1.type]===c2.type || DUO_MATCH[c2.type]===c1.type;
+
+/* ===== GAME STATE ===== */
+let GS = {
+  screen:'title', mode:'ai', numPlayers:2, targetScore:40,
+  players:[], deck:[], discardPiles:[[],[]], currentPlayer:0, firstPlayer:0,
+  phase:'draw', // draw|chooseKeep|chooseDiscard|playDuos|endChoice|duoFx_crab|duoFx_crabPile|duoFx_steal
+  drawn:[], cardToDiscard:null, selectedCards:[],
+  caller:-1, callType:null, lcTurnsLeft:0,
+  extraTurn:false, roundNum:1, roundScores:null,
+  aiThinking:false, toasts:[], showAll:false,
+  crabPileIdx:-1, showPass:false, passTarget:-1,
+  zoomCard:null, confirmDraw:null, fishTopCard:null,
+  cardRegistry:{},
+  onlineMode:null, myPeerIdx:0, roomCode:'',
+};
+
+function initPlayers(n,mode) {
+  const aiN=['You','Gull','Crab','Whale'];
+  const locN=['Player 1','Player 2','Player 3','Player 4'];
+  return Array.from({length:n},(_,i)=>({
+    name:mode==='ai'?aiN[i]:locN[i],
+    isAI:mode==='ai'&&i>0,
+    hand:[],played:[],totalScore:0,protected:false
+  }));
+}
+
+/* ===== ROUND START ===== */
+function startRound() {
+  const gs=GS;
+  gs.deck=createDeck();
+  gs.discardPiles=[[],[]];
+  gs.phase='draw'; gs.drawn=[]; gs.cardToDiscard=null; gs.selectedCards=[];
+  gs.caller=-1; gs.callType=null; gs.lcTurnsLeft=0; gs.extraTurn=false;
+  gs.aiThinking=false; gs.roundScores=null; gs.showAll=false;
+  gs.crabPileIdx=-1; gs.showPass=false; gs.passTarget=-1;
+  gs.zoomCard=null; gs.confirmDraw=null; gs.fishTopCard=null;
+  gs.cardRegistry={};
+  for(const p of gs.players){p.hand=[];p.played=[];p.protected=false;}
+  gs.currentPlayer=gs.firstPlayer;
+
+  // ★ OFFICIAL SETUP: reveal first 2 cards to form discard piles (one each)
+  gs.discardPiles[0].push(gs.deck.pop());
+  gs.discardPiles[1].push(gs.deck.pop());
+
+  gs.screen='game';
+  render();
+  if(gs.players[gs.currentPlayer].isAI) setTimeout(runAI, 900);
+}
+
+/* ===== DRAW PHASE ===== */
+function doDrawDeck() {
+  if(GS.onlineMode==='client'){sendAction('doDrawDeck');return;}
+  const gs=GS;
+  gs.confirmDraw={source:'deck'};
+  render();
+}
+
+function confirmDrawAction() {
+  if(GS.onlineMode==='client'){sendAction('confirmDrawAction');return;}
+  const gs=GS;
+  if(!gs.confirmDraw) return;
+  gs.confirmDraw=null;
+  reshuffleIfNeeded();
+  if(gs.deck.length===0){endRound('deckEmpty');return;}
+  if(gs.deck.length===1){
+    gs.players[gs.currentPlayer].hand.push(gs.deck.pop());
+    afterDraw(); return;
+  }
+  gs.drawn=[gs.deck.pop(), gs.deck.pop()];
+  gs.phase='chooseKeep'; render();
+}
+
+function cancelDrawAction() {
+  if(GS.onlineMode==='client'){sendAction('cancelDrawAction');return;}
+  GS.confirmDraw=null;
+  render();
+}
+
+function doTakeDiscard(pi) {
+  if(GS.onlineMode==='client'){sendAction('doTakeDiscard',pi);return;}
+  const gs=GS;
+  gs.confirmDraw={source:'discard', pileIdx:pi};
+  render();
+}
+
+function confirmDiscardDraw() {
+  if(GS.onlineMode==='client'){sendAction('confirmDiscardDraw');return;}
+  const gs=GS;
+  if(!gs.confirmDraw||gs.confirmDraw.source!=='discard') return;
+  const pi=gs.confirmDraw.pileIdx;
+  gs.confirmDraw=null;
+  if(gs.discardPiles[pi].length===0) return;
+  gs.players[gs.currentPlayer].hand.push(gs.discardPiles[pi].pop());
+  afterDraw();
+}
+
+function cancelDiscardDraw() {
+  if(GS.onlineMode==='client'){sendAction('cancelDiscardDraw');return;}
+  GS.confirmDraw=null;
+  render();
+}
+
+function doKeepCard(idx) {
+  if(GS.onlineMode==='client'){sendAction('doKeepCard',idx);return;}
+  const gs=GS;
+  const kept=gs.drawn[idx]; const disc=gs.drawn[1-idx];
+  gs.players[gs.currentPlayer].hand.push(kept);
+  gs.drawn=[]; gs.cardToDiscard=disc;
+  // Must fill an empty pile if one exists
+  const e0=gs.discardPiles[0].length===0, e1=gs.discardPiles[1].length===0;
+  if(e0&&!e1){gs.discardPiles[0].push(disc);gs.cardToDiscard=null;afterDraw();}
+  else if(e1&&!e0){gs.discardPiles[1].push(disc);gs.cardToDiscard=null;afterDraw();}
+  else if(e0&&e1){gs.discardPiles[0].push(disc);gs.cardToDiscard=null;afterDraw();}
+  else{gs.phase='chooseDiscard';render();}
+}
+
+function doDiscardTo(pi) {
+  if(GS.onlineMode==='client'){sendAction('doDiscardTo',pi);return;}
+  const gs=GS;
+  gs.discardPiles[pi].push(gs.cardToDiscard);
+  gs.cardToDiscard=null; afterDraw();
+}
+
+function afterDraw() { GS.phase='playDuos'; GS.selectedCards=[]; render(); }
+
+function reshuffleIfNeeded() {
+  const gs=GS;
+  if(gs.deck.length>2) return;
+  for(let i=0;i<2;i++){
+    if(gs.discardPiles[i].length>1){
+      const top=gs.discardPiles[i].pop();
+      gs.deck.push(...gs.discardPiles[i]);
+      gs.discardPiles[i]=[top];
+    }
+  }
+  gs.deck=shuffle(gs.deck);
+}
+
+/* ===== DUO PHASE ===== */
+function doPlayDuo(id1, id2) {
+  if(GS.onlineMode==='client'){sendAction('doPlayDuo',id1,id2);return;}
+  const gs=GS; const p=gs.players[gs.currentPlayer];
+  const c1=p.hand.find(c=>c.id===id1), c2=p.hand.find(c=>c.id===id2);
+  if(!c1||!c2) return;
+  p.hand=p.hand.filter(c=>c.id!==id1&&c.id!==id2);
+  p.played.push(c1,c2);
+  gs.selectedCards=[];
+  resolveDuo(c1,c2);
+}
+
+function resolveDuo(c1, c2) {
+  const gs=GS; const p=gs.players[gs.currentPlayer];
+  const types=[c1.type,c2.type].sort().join(',');
+  if(types===`${T.CRAB},${T.CRAB}`) {
+    // ★ Look through entire discard pile (no shuffling), pick any card
+    toast(`${p.name} played Crab pair! Browse a discard pile.`);
+    if(p.isAI) {
+      let best=null, bestPile=-1, bestVal=-1;
+      for(let i=0;i<2;i++){
+        for(const c of gs.discardPiles[i]){
+          const v=cardValue(c,[...p.hand,...p.played]);
+          if(v>bestVal){bestVal=v;best=c;bestPile=i;}
+        }
+      }
+      if(best!==null){
+        gs.discardPiles[bestPile]=gs.discardPiles[bestPile].filter(c=>c.id!==best.id);
+        p.hand.push(best); toast(`${p.name} browsed pile and grabbed ${best.name}!`);
+      } else toast(`Discard piles empty!`);
+      render();
+    } else {
+      gs.phase='duoFx_crabPile'; render();
+    }
+  } else if(types===`${T.BOAT},${T.BOAT}`) {
+    toast(`${p.name} played Boat pair! Taking an extra turn...`);
+    gs.extraTurn=true;
+    render();
+  } else if(types===`${T.FISH},${T.FISH}`) {
+    // Fish: peek top of deck
+    if(p.isAI) {
+      // Auto-take for AI
+      if(gs.deck.length>0){
+        p.hand.push(gs.deck.pop());
+        toast(`${p.name} drew from deck via Fish!`);
+      }
+      render();
+    } else {
+      // Human: show modal
+      if(gs.deck.length>0){
+        gs.fishTopCard=gs.deck[gs.deck.length-1];
+        gs.phase='duoFx_fish';
+        render();
+      } else {
+        render();
+      }
+    }
+  } else if(types===`${T.SHARK},${T.SWIMMER}`) {
+    toast(`${p.name} played Swimmer+Shark! Stealing...`);
+    if(p.isAI) {
+      const tgts=gs.players.filter((_,i)=>i!==gs.currentPlayer&&gs.players[i].hand.length>0&&!gs.players[i].protected);
+      if(tgts.length>0){
+        const tgt=tgts.reduce((a,b)=>a.hand.length>b.hand.length?a:b);
+        doStealFrom(gs.players.indexOf(tgt));
+      } else {
+        render();
+      }
+    } else {
+      gs.phase='duoFx_steal'; render();
+    }
+  }
+}
+
+function doPlayFishCard(take) {
+  if(GS.onlineMode==='client'){sendAction('doPlayFishCard',take);return;}
+  const gs=GS;
+  if(take && gs.fishTopCard) {
+    gs.players[gs.currentPlayer].hand.push(gs.deck.pop());
+    toast(`${gs.players[gs.currentPlayer].name} took the fish card!`);
+  } else if(!take && gs.fishTopCard) {
+    toast(`${gs.players[gs.currentPlayer].name} declined the fish card.`);
+  }
+  gs.fishTopCard=null;
+  gs.phase='playDuos';
+  render();
+}
+
+function pickCrabCard(cardId, pileIdx) {
+  if(GS.onlineMode==='client'){sendAction('pickCrabCard',cardId,pileIdx);return;}
+  const gs=GS; const p=gs.players[gs.currentPlayer];
+  const c=gs.discardPiles[pileIdx].find(ca=>ca.id===cardId);
+  if(!c) return;
+  gs.discardPiles[pileIdx]=gs.discardPiles[pileIdx].filter(ca=>ca.id!==cardId);
+  p.hand.push(c);
+  toast(`${p.name} browsed pile and grabbed ${c.name}!`);
+  gs.crabPileIdx=-1;
+  gs.phase='playDuos';
+  render();
+}
+
+function doStealFrom(targetIdx) {
+  if(GS.onlineMode==='client'){sendAction('doStealFrom',targetIdx);return;}
+  const gs=GS; const p=gs.players[gs.currentPlayer]; const t=gs.players[targetIdx];
+  if(t.hand.length===0) return;
+  const stoleIdx=0|Math.random()*t.hand.length;
+  const stolen=t.hand[stoleIdx];
+  t.hand.splice(stoleIdx,1);
+  p.hand.push(stolen);
+  toast(`${p.name} stole a card from ${t.name}!`);
+  gs.phase='playDuos';
+  render();
+}
+
+function finishDuoPhase() {
+  if(GS.onlineMode==='client'){sendAction('finishDuoPhase');return;}
+  const gs=GS;
+  if(gs.extraTurn){
+    gs.extraTurn=false;
+    toast(`Extra turn for ${gs.players[gs.currentPlayer].name}!`);
+    gs.phase='draw';
+    gs.drawn=[]; gs.cardToDiscard=null; gs.selectedCards=[];
+    render();
+    if(gs.players[gs.currentPlayer].isAI) setTimeout(runAI, 900);
+  } else {
+    doEndTurn('pass');
+  }
+}
+
+function doEndTurn(action) {
+  if(GS.onlineMode==='client'){sendAction('doEndTurn',action);return;}
+  const gs=GS;
+  if(action==='stop'){
+    gs.callType='stop'; gs.caller=gs.currentPlayer;
+    endRound('stop');
+  } else if(action==='lastChance'){
+    gs.callType='lastChance'; gs.caller=gs.currentPlayer;
+    gs.lcTurnsLeft=gs.players.length-1;
+    for(const p of gs.players) p.protected=false;
+    gs.players[gs.currentPlayer].protected=true;
+    nextPlayer();
+  } else {
+    nextPlayer();
+  }
+}
+
+function nextPlayer() {
+  const gs=GS;
+  if(gs.callType==='lastChance'&&gs.lcTurnsLeft>0){
+    gs.lcTurnsLeft--;
+    gs.currentPlayer=(gs.currentPlayer+1)%gs.players.length;
+    if(gs.currentPlayer===gs.caller){
+      endRound('lastChance');
+    } else {
+      gs.phase='draw';
+      render();
+      if(gs.players[gs.currentPlayer].isAI) setTimeout(runAI,900);
+    }
+  } else if(gs.callType==='lastChance'&&gs.lcTurnsLeft===0){
+    endRound('lastChance');
+  } else {
+    gs.currentPlayer=(gs.currentPlayer+1)%gs.players.length;
+    gs.phase='draw';
+    render();
+    if(gs.players[gs.currentPlayer].isAI) setTimeout(runAI,900);
+  }
+}
+
+function doPassConfirm() {
+  if(GS.onlineMode==='client'){sendAction('doPassConfirm');return;}
+  GS.showPass=false;
+  render();
+}
+
+function endRound(reason) {
+  const gs=GS;
+  const scores=[];
+  for(let i=0;i<gs.players.length;i++){
+    const p=gs.players[i];
+    const cards=getAllCards(p);
+    const cardPts=getCardScore(p);
+    const colorBon=getColorBonus(cards);
+    const instantWin=p.hand.length===0&&p.played.some(c=>c.type===T.MERMAID)&&countType(cards,T.MERMAID)===4;
+    scores.push({playerIndex:i,cardPts,colorBon,roundPts:0,instantWin,betResult:null});
+  }
+  if(scores.some(s=>s.instantWin)){applyScores(scores);return;}
+  if(reason==='stop'){
+    for(const s of scores) s.roundPts=s.cardPts;
+  } else if(reason==='lastChance'){
+    const cs=scores[gs.caller];
+    const callerWins=scores.every((s,i)=>i===gs.caller||s.cardPts<=cs.cardPts);
+    if(callerWins){
+      // Caller has the highest score: caller keeps full pts + color bonus, everyone else gets color bonus only
+      cs.roundPts=cs.cardPts+cs.colorBon; cs.betResult='won';
+      for(const s of scores) if(s.playerIndex!==gs.caller) s.roundPts=s.colorBon;
+    } else {
+      // Caller lost: the highest scorer keeps their pts + color bonus, everyone else (including caller) gets color bonus only
+      cs.betResult='lost';
+      const maxPts=Math.max(...scores.map(s=>s.cardPts));
+      for(const s of scores){
+        if(s.cardPts===maxPts) { s.roundPts=s.cardPts+s.colorBon; }
+        else { s.roundPts=s.colorBon; }
+      }
+    }
+  } else {
+    for(const s of scores) s.roundPts=s.cardPts;
+  }
+  applyScores(scores);
+}
+
+function applyScores(sc) {
+  GS.roundScores=sc;
+  for(const s of sc) GS.players[s.playerIndex].totalScore+=s.roundPts;
+  render();
+}
+
+const checkGameOver = () => GS.players.some(p=>p.totalScore>=GS.targetScore);
+
+function nextRound() {
+  if(checkGameOver()){GS.screen='gameOver';render();return;}
+  GS.roundNum++; GS.firstPlayer=(GS.firstPlayer+1)%GS.players.length;
+  startRound();
+}
+
+/* ===== AI TURN ===== */
+async function runAI() {
+  const gs=GS; const ai=gs.players[gs.currentPlayer];
+  if(!ai.isAI){gs.aiThinking=false;render();return;}
+  gs.aiThinking=true; render();
+  await wait(500);
+  // Draw decision
+  const allCards=[...ai.hand,...ai.played];
+  let bestDiscard=-1, bestVal=-1;
+  for(let i=0;i<2;i++){
+    if(gs.discardPiles[i].length>0){
+      const top=gs.discardPiles[i][gs.discardPiles[i].length-1];
+      const v=cardValue(top,allCards);
+      if(v>bestVal&&v>=4){bestVal=v;bestDiscard=i;}
+    }
+  }
+  if(bestDiscard>=0){
+    ai.hand.push(gs.discardPiles[bestDiscard].pop());
+    afterDraw();
+  } else {
+    reshuffleIfNeeded();
+    if(gs.deck.length===0){endRound('deckEmpty');return;}
+    if(gs.deck.length===1){
+      ai.hand.push(gs.deck.pop());
+      afterDraw();
+    } else {
+      gs.drawn=[gs.deck.pop(), gs.deck.pop()];
+      gs.phase='chooseKeep';
+      await wait(350);
+      if(gs.phase==='chooseKeep'){
+        const ki=cardValue(gs.drawn[0],allCards)>=cardValue(gs.drawn[1],allCards)?0:1;
+        doKeepCard(ki);
+        await wait(250);
+        if(gs.phase==='chooseDiscard')
+          doDiscardTo(gs.discardPiles[0].length<=gs.discardPiles[1].length?0:1);
+      }
+    }
+  }
+  await wait(350);
+  // Play duos
+  gs.phase='playDuos';
+  const duos=aiFindDuos(ai.hand);
+  for(const[c1,c2] of duos){
+    doPlayDuo(c1.id,c2.id); await wait(450);
+    if(gs.phase==='duoFx_steal'){
+      const tgts=gs.players.filter((_,i)=>i!==gs.currentPlayer&&gs.players[i].hand.length>0&&!gs.players[i].protected);
+      if(tgts.length>0){const tgt=tgts.reduce((a,b)=>a.hand.length>b.hand.length?a:b);doStealFrom(gs.players.indexOf(tgt));}
+      else{gs.phase='playDuos';render();}
+      await wait(350);
+    }
+  }
+  await wait(350);
+  // Call end?
+  if(!gs.callType){
+    const pts=getCardScore(ai);
+    if(pts>=7){
+      const oppMax=Math.max(...gs.players.filter((_,i)=>i!==gs.currentPlayer).map(p=>getCardScore(p)));
+      if(pts>=12&&pts>oppMax+1){doEndTurn('lastChance');gs.aiThinking=false;render();return;}
+      if(pts>=9&&pts>oppMax){doEndTurn('lastChance');gs.aiThinking=false;render();return;}
+      if(pts>=7&&pts>=oppMax){doEndTurn('stop');gs.aiThinking=false;render();return;}
+    }
+  }
+  finishDuoPhase();
+  gs.aiThinking=false; render();
+}
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ===== ZOOM CARD ===== */
+function zoomCard(event, cardId) {
+  event.preventDefault();
+  const card=GS.cardRegistry[cardId];
+  if(card) GS.zoomCard=cardId;
+  render();
+}
+
+function closeZoom() {
+  GS.zoomCard=null;
+  render();
+}
+
+/* ===== TOAST ===== */
+function toast(msg) {
+  GS.toasts.push({msg,id:Date.now()});
+  setTimeout(()=>{GS.toasts.shift();render();},2700);
+  render();
+}
+
+/* ===== CARD RENDERING ===== */
+function cardHTML(card, opts={}) {
+  const {size='', sel=false, clickFn='', noHov=false, glow=false, playerCards=[], isZoom=false} = opts;
+  const sc=size==='sm'?'sm-c':size==='xs'?'xs-c':'';
+  const zoomCls=isZoom?'zoom-card':'';
+  const cls=[sc,noHov?'nohov':'',sel?'sel':'',glow?'glow-c':'',zoomCls].filter(Boolean).join(' ');
+  const click=clickFn?`onclick="${clickFn}"`:'';
+  const contextClick=!isZoom?`oncontextmenu="zoomCard(event,${card.id})"` : '';
+  GS.cardRegistry[card.id]=card;
+  const badge = isDuo(card.type) ? `<span class="cbadge">1</span>` : card.type===T.MERMAID ? `<span class="cbadge">?</span>` : '';
+  const tag = isDuo(card.type)?'DUO':isCollector(card.type)?'SET':isMulti(card.type)?'BONUS':card.type===T.MERMAID?'MAGIC':'';
+  let body='';
+  if(size!=='xs') {
+    if(isDuo(card.type) && size!=='xs') body+=duoBody(card);
+    if(isCollector(card.type)) body+=collectorBody(card, playerCards);
+    if(isMulti(card.type)) body+=multiBody(card);
+    if(card.type===T.MERMAID) body+=`<div class="mmerbody">= cards of your<br>most common color<br><span style="color:var(--gold)">×4 = WIN!</span></div>`;
+  }
+  return `<div class="card cc-${card.color} ${cls}" ${click} ${contextClick} title="${card.name}">
+    <div class="card-hdr"><span class="ctag">${tag}</span>${badge}</div>
+    <div class="cico">${card.icon}</div>
+    <div class="cnm">${card.name}</div>
+    ${body}
+  </div>`;
+}
+
+function duoBody(card) {
+  const fxLabel = {
+    [T.CRAB]:'Browse pile,\npick any card',
+    [T.BOAT]:'Extra turn',
+    [T.FISH]:'Draw top\nof deck',
+    [T.SWIMMER]:'Steal random\ncard',
+    [T.SHARK]:'Steal random\ncard',
+  };
+  const pairIco = DUO_MATCH[card.type]===card.type
+    ? `${card.icon}+${card.icon}`
+    : `${card.icon}+${ICONS[DUO_MATCH[card.type]]}`;
+  return `<div class="duo-strip">
+    <span class="dp">${pairIco}</span>
+    <span class="dt">${(fxLabel[card.type]||'').replace('\n','<br>')}</span>
+  </div>`;
+}
+
+function collectorBody(card, playerCards) {
+  const tbl=COLL_SCORE[card.type];
+  const cur=countType(playerCards, card.type);
+  const rows=tbl.slice(1).map((pts,i)=>{
+    const n=i+1;
+    const isCur=n===cur;
+    const dotsStr=card.icon.repeat(n);
+    return `<div class="srow${isCur?' cur':''}">
+      <span class="sdots" style="font-size:${n>3?4:5}px">${dotsStr}</span>
+      <span class="spts">${pts}</span>
+    </div>`;
+  });
+  return `<div class="strack">${rows.join('')}</div>`;
+}
+
+function multiBody(card) {
+  const lines={
+    [T.LIGHTHOUSE]:'🗼 +1 per ⛵ boat',
+    [T.SHOAL]:'🐠 +1 per 🐟 fish',
+    [T.PENGUIN_COL]:'🏔️ +2 per 🐧 penguin',
+    [T.CAPTAIN]:'🎖️ +3 per ⚓ sailor',
+  };
+  const notes={
+    [T.LIGHTHOUSE]:'(not a boat)',
+    [T.SHOAL]:'(not a fish)',
+    [T.PENGUIN_COL]:'(not a penguin)',
+    [T.CAPTAIN]:'(not a sailor)',
+  };
+  return `<div class="mbody">
+    <div class="mline">${lines[card.type]||''}</div>
+    <div class="mline" style="font-size:4px;opacity:.7">${notes[card.type]||''}</div>
+  </div>`;
+}
+
+function deckHTML(count, clickable) {
+  return `<div class="card facedown${clickable?' glow-c':' nohov'}" ${clickable?'onclick="doDrawDeck()"':''}>
+    <div class="fd-inner">
+      <div class="fd-ico">🌊</div>
+      <div style="font-size:5px;color:var(--teal);text-align:center;margin-top:2px">DECK</div>
+      <div class="fd-cnt">${count}</div>
+    </div>
+  </div>`;
+}
+
+function toggleSel(id) {
+  if(GS.onlineMode==='client'){sendAction('toggleSel',id);return;}
+  const gs=GS;
+  const i=gs.selectedCards.indexOf(id);
+  if(i>=0) gs.selectedCards.splice(i,1);
+  else{if(gs.selectedCards.length>=2) gs.selectedCards.shift(); gs.selectedCards.push(id);}
+  render();
+}
+
+/* ===== ONLINE MULTIPLAYER ===== */
+let _peer = null;
+let _connections = [];   // host: array of client conns; client: single [hostConn]
+let _lobbyPlayers = [];  // [{name,idx}] tracked on both host and client
+
+function serializeGS() {
+  const gs=GS;
+  return JSON.parse(JSON.stringify({
+    screen:gs.screen, mode:gs.mode, numPlayers:gs.numPlayers, targetScore:gs.targetScore,
+    players:gs.players, deck:gs.deck, discardPiles:gs.discardPiles,
+    currentPlayer:gs.currentPlayer, firstPlayer:gs.firstPlayer, phase:gs.phase,
+    drawn:gs.drawn, cardToDiscard:gs.cardToDiscard, selectedCards:gs.selectedCards,
+    caller:gs.caller, callType:gs.callType, lcTurnsLeft:gs.lcTurnsLeft,
+    extraTurn:gs.extraTurn, roundNum:gs.roundNum, roundScores:gs.roundScores,
+    aiThinking:gs.aiThinking, toasts:gs.toasts, showAll:gs.showAll,
+    crabPileIdx:gs.crabPileIdx, showPass:gs.showPass, passTarget:gs.passTarget,
+    zoomCard:gs.zoomCard, confirmDraw:gs.confirmDraw, fishTopCard:gs.fishTopCard,
+  }));
+}
+
+function broadcastState() {
+  if(!_connections.length) return;
+  const state=serializeGS();
+  for(const conn of _connections) { if(conn.open) conn.send({type:'state',gs:state}); }
+}
+
+function sendAction(name,...args) {
+  const conn=_connections[0];
+  if(conn&&conn.open) conn.send({type:'action',name,args});
+}
+
+function handleRemoteAction(msg) {
+  const fns={doDrawDeck,confirmDrawAction,cancelDrawAction,doTakeDiscard,
+    confirmDiscardDraw,cancelDiscardDraw,doKeepCard,doDiscardTo,toggleSel,
+    doPlayDuo,finishDuoPhase,doEndTurn,doPlayFishCard,pickCrabCard,
+    doStealFrom,doPassConfirm};
+  const fn=fns[msg.name];
+  if(fn) fn(...(msg.args||[]));
+}
+
+function createRoom() {
+  const nameEl=document.getElementById('online-name');
+  const name=(nameEl&&nameEl.value.trim())||'Host';
+  GS.onlineMode='host'; GS.myPeerIdx=0; GS.mode='online';
+  _lobbyPlayers=[{name,idx:0}];
+  GS.screen='onlineWait'; render();
+  _peer=new Peer();
+  _peer.on('open', id=>{GS.roomCode=id; render();});
+  _peer.on('connection', conn=>{
+    _connections.push(conn);
+    conn.on('data', msg=>{
+      if(msg.type==='join'){
+        const pIdx=_lobbyPlayers.length;
+        _lobbyPlayers.push({name:msg.name,idx:pIdx});
+        conn._playerIdx=pIdx;
+        conn.send({type:'welcome',playerIdx:pIdx,lobby:_lobbyPlayers});
+        for(const c of _connections) if(c.open&&c!==conn) c.send({type:'lobby',players:_lobbyPlayers});
+        render();
+      } else if(msg.type==='action'){
+        handleRemoteAction(msg);
+      }
+    });
+    conn.on('close',()=>{ _connections=_connections.filter(c=>c!==conn); render(); });
+  });
+  _peer.on('error',err=>{ toast('Connection error: '+err.type); });
+}
+
+function joinRoom() {
+  const nameEl=document.getElementById('online-name');
+  const codeEl=document.getElementById('room-code');
+  const name=(nameEl&&nameEl.value.trim())||'Player';
+  const code=(codeEl&&codeEl.value.trim())||'';
+  if(!code){toast('Enter a room code!');return;}
+  GS.onlineMode='client'; GS.mode='online';
+  GS.screen='onlineJoining'; render();
+  _peer=new Peer();
+  _peer.on('open',()=>{
+    const conn=_peer.connect(code);
+    _connections=[conn];
+    conn.on('open',()=>{ conn.send({type:'join',name}); });
+    conn.on('data',msg=>{
+      if(msg.type==='welcome'){
+        GS.myPeerIdx=msg.playerIdx; _lobbyPlayers=msg.lobby;
+        GS.screen='onlineWait'; render();
+      } else if(msg.type==='lobby'){
+        _lobbyPlayers=msg.players; render();
+      } else if(msg.type==='state'){
+        const myIdx=GS.myPeerIdx;
+        Object.assign(GS,msg.gs);
+        GS.myPeerIdx=myIdx; GS.onlineMode='client'; GS.mode='online'; GS.cardRegistry={};
+        render();
+      }
+    });
+    conn.on('close',()=>{ toast('Host disconnected!'); GS.screen='title'; GS.onlineMode=null; render(); });
+  });
+  _peer.on('error',err=>{ toast('Could not connect: '+err.type); GS.screen='title'; GS.onlineMode=null; render(); });
+}
+
+function startOnlineGame() {
+  if(_lobbyPlayers.length<2){toast('Need at least 2 players!');return;}
+  GS.numPlayers=_lobbyPlayers.length;
+  GS.targetScore=GS.numPlayers===2?40:GS.numPlayers===3?35:30;
+  GS.players=_lobbyPlayers.map(lp=>({name:lp.name,isAI:false,hand:[],played:[],totalScore:0,protected:false}));
+  GS.firstPlayer=0; GS.roundNum=1;
+  startRound();
+}
+
+function leaveOnline() {
+  if(_peer) _peer.destroy();
+  _peer=null; _connections=[]; _lobbyPlayers=[];
+  GS.onlineMode=null; GS.roomCode=''; GS.screen='title';
+  render();
+}
+
+function onlineMenuScreen(){return`
+  <div class="psel">
+    <h2 style="font-size:14px;color:var(--teal)">🌐 ONLINE MULTIPLAYER</h2>
+    <p style="font-size:9px;color:var(--sand);margin-bottom:14px">Play with friends over the internet — no account needed</p>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:320px">
+      <input id="online-name" class="txt-inp" placeholder="Your name" maxlength="16">
+      <button class="btn green wide" onclick="createRoom()">🏠 CREATE ROOM</button>
+      <div style="font-size:9px;color:var(--foam);text-align:center;margin:2px 0">— or join a room —</div>
+      <input id="room-code" class="txt-inp" placeholder="Room code" maxlength="80" style="text-transform:uppercase">
+      <button class="btn wide" onclick="joinRoom()">🔗 JOIN ROOM</button>
+    </div>
+    <button class="btn sm red" style="margin-top:18px" onclick="GS.screen='title';render()">BACK</button>
+  </div>`;}
+
+function onlineWaitScreen(){
+  const gs=GS; const isHost=gs.onlineMode==='host';
+  return`<div class="psel">
+    <h2 style="font-size:13px;color:var(--teal)">${isHost?'🏠 YOUR ROOM':'✅ JOINED!'}</h2>
+    ${isHost?`
+      <p style="font-size:9px;color:var(--sand)">Share this code with friends:</p>
+      ${gs.roomCode
+        ?`<div class="room-code-box" onclick="navigator.clipboard?.writeText('${gs.roomCode}');toast('Copied!')">
+            ${gs.roomCode}<br><span style="font-size:7px;color:var(--foam);letter-spacing:0">tap to copy</span>
+          </div>`
+        :`<div style="font-size:9px;color:var(--sand)">Generating code...</div>`}
+    `:`<p style="font-size:9px;color:var(--sand)">Waiting for host to start the game...</p>`}
+    <div style="font-size:11px;color:var(--foam);margin:12px 0">Players (${_lobbyPlayers.length}):</div>
+    <div style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:300px">
+      ${_lobbyPlayers.map((p,i)=>`<div class="lobby-row" style="color:${i===gs.myPeerIdx?'var(--gold)':'var(--foam)'}">
+        ${i===0?'👑':i===gs.myPeerIdx?'👤':'🙂'} ${p.name}${i===0?' (host)':''}${i===gs.myPeerIdx?' ← you':''}
+      </div>`).join('')}
+    </div>
+    ${isHost?`
+      <button class="btn green" style="margin-top:16px" onclick="startOnlineGame()"
+        ${_lobbyPlayers.length<2?'class="btn green off" disabled':''}>
+        ${_lobbyPlayers.length<2?'Waiting for players…':'▶ START GAME'}
+      </button>`:''}
+    <button class="btn sm red" style="margin-top:10px" onclick="leaveOnline()">LEAVE</button>
+  </div>`;}
+
+function onlineJoiningScreen(){return`
+  <div class="psel">
+    <h2 style="font-size:13px;color:var(--teal)">⏳ CONNECTING…</h2>
+    <p style="font-size:9px;color:var(--sand)">Joining the room, please wait…</p>
+    <button class="btn sm red" style="margin-top:16px" onclick="leaveOnline()">CANCEL</button>
+  </div>`;}
+
+/* ===== SCREEN RENDERS ===== */
+function render() {
+  const app=document.getElementById('app');
+  if(!app) return;
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  if(GS.toasts.length>0){
+    const t=document.createElement('div'); t.className='toast';
+    t.textContent=GS.toasts[GS.toasts.length-1].msg;
+    document.body.appendChild(t);
+  }
+  const gs=GS;
+  if(gs.showPass&&gs.screen==='game'){app.innerHTML=passScreen();return;}
+  if(gs.zoomCard!==null){app.innerHTML=zoomCardModal();return;}
+  switch(gs.screen){
+    case'title':app.innerHTML=titleScreen();break;
+    case'playerSelect':app.innerHTML=playerSelect();break;
+    case'rules':app.innerHTML=rulesScreen();break;
+    case'game':app.innerHTML=gameScreen();break;
+    case'roundEnd':app.innerHTML=roundEndScreen();break;
+    case'gameOver':app.innerHTML=gameOverScreen();break;
+    case'onlineMenu':app.innerHTML=onlineMenuScreen();break;
+    case'onlineWait':app.innerHTML=onlineWaitScreen();break;
+    case'onlineJoining':app.innerHTML=onlineJoiningScreen();break;
+  }
+  if(gs.onlineMode==='host') broadcastState();
+}
+
+function titleScreen(){return`
+  <div class="title-sc">
+    <div class="fish-anim">🐠</div>
+    <h1>SEA SALT<br>&amp; PAPER</h1>
+    <div class="sub">A card game of origami & the sea</div>
+    <div class="menu-col">
+      <button class="btn wide" onclick="GS.mode='ai';GS.screen='playerSelect';render()">🤖 VS COMPUTER</button>
+      <button class="btn green wide" onclick="GS.screen='onlineMenu';render()">🌐 ONLINE MULTIPLAYER</button>
+      <button class="btn purple wide" onclick="GS.screen='rules';render()">📖 HOW TO PLAY</button>
+    </div>
+  </div>`;}
+
+function playerSelect(){const gs=GS;return`
+  <div class="psel">
+    <h2 style="font-size:13px;color:var(--teal)">NUMBER OF PLAYERS</h2>
+    <p style="font-size:8px;color:var(--sand)">${gs.mode==='ai'?'You + AI opponents':'Pass the device between turns'}</p>
+    <div class="p-opts">
+      ${[2,3,4].map(n=>`<div class="popt${gs.numPlayers===n?' sel':''}" onclick="GS.numPlayers=${n};GS.targetScore=${n===2?40:n===3?35:30};render()">
+        <div class="num">${n}</div><div class="lbl">players</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-size:8px;color:var(--foam)">Win at: ${gs.targetScore} points</div>
+    <div style="display:flex;gap:12px;margin-top:14px;">
+      <button class="btn sm" onclick="GS.screen='title';render()">BACK</button>
+      <button class="btn green" onclick="beginGame()">START GAME</button>
+    </div>
+  </div>`;}
+
+function beginGame(){
+  const gs=GS;
+  gs.players=initPlayers(gs.numPlayers,gs.mode);
+  gs.firstPlayer=0; gs.roundNum=1;
+  startRound();
+}
+
+function passScreen(){const gs=GS;const p=gs.players[gs.passTarget];return`
+  <div class="pass-sc">
+    <div class="fish-anim">📱</div>
+    <h2 style="font-size:14px;color:var(--teal)">PASS TO</h2>
+    <h2 style="font-size:16px;color:var(--gold)">${p.name}</h2>
+    <p style="font-size:8px;color:var(--sand);text-align:center">Hand the device to ${p.name}.<br>Don't show anyone else!</p>
+    <button class="btn green" style="margin-top:12px" onclick="doPassConfirm()">✔ I'M READY</button>
+  </div>`;}
+
+function gameScreen(){
+  const gs=GS; const cp=gs.players[gs.currentPlayer];
+  const isOnline=gs.mode==='online';
+  const humanIdx=isOnline?gs.myPeerIdx:gs.mode==='ai'?0:gs.currentPlayer;
+  const isMyTurn=isOnline?(gs.currentPlayer===gs.myPeerIdx):!cp.isAI;
+  // Show modals over game (only to the player whose turn it is)
+  if(gs.phase==='chooseKeep'&&isMyTurn) return chooseKeepModal();
+  if(gs.phase==='chooseDiscard'&&isMyTurn) return chooseDiscardModal();
+  if(gs.phase==='duoFx_crab'&&isMyTurn) return crabModal();
+  if(gs.phase==='duoFx_crabPile'&&isMyTurn) return crabPileModal();
+  if(gs.phase==='duoFx_fish'&&isMyTurn) return fishModal();
+  if(gs.phase==='duoFx_steal'&&isMyTurn) return stealModal();
+  if(gs.confirmDraw&&isMyTurn) return drawConfirmModal();
+  return `
+    ${topBar()}
+    <div class="gboard">
+      ${opponentsArea(humanIdx)}
+      ${centerArea()}
+      ${statusBar()}
+      ${actionBtns()}
+      ${handArea(humanIdx)}
+    </div>
+    ${stopLastChanceBar(humanIdx)}`;}
+
+function topBar(){const gs=GS;return`
+  <div class="topbar">
+    <div style="font-size:7px;color:var(--sand)">Round ${gs.roundNum} · Win at ${gs.targetScore}pts</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      ${gs.players.map((p,i)=>`<div class="pscore${i===gs.currentPlayer?' act':''}">
+        <span class="sname">${p.isAI?'🤖':'👤'} ${p.name}</span>
+        <span class="sval">${p.totalScore}</span>
+        <span class="srnd">(${getCardScore(p)})</span>
+      </div>`).join('')}
+    </div>
+    <button class="btn sm red" onclick="if(confirm('Quit game?')){GS.screen='title';render();}">QUIT</button>
+  </div>`;}
+
+function opponentsArea(humanIdx){
+  const gs=GS;
+  const opps=gs.players.map((p,i)=>({...p,idx:i})).filter((_,i)=>i!==humanIdx);
+  if(!opps.length) return '';
+  return `<div class="opp-area">${opps.map(opp=>`
+    <div class="opp-panel${opp.idx===gs.currentPlayer?' opp-act':''}">
+      <div class="opp-nm">${opp.isAI?'🤖':'👤'} ${opp.name}
+        ${opp.idx===gs.currentPlayer&&gs.aiThinking?'<span class="dots"><span>.</span><span>.</span><span>.</span></span>':''}
+        ${opp.protected?'🛡️ <span style="font-size:5px">protected</span>':''}
+      </div>
+      <div class="opp-hc">${opp.hand.length} cards in hand</div>
+      <div class="opp-pts">Played: ${getCardScore({hand:[],played:opp.played})} pts</div>
+      <div class="opp-cards">${opp.played.map(c=>cardHTML(c,{size:'xs',noHov:true})).join('')}</div>
+    </div>`).join('')}
+  </div>`;}
+
+function centerArea(){const gs=GS;
+  const isMyTurn=gs.mode==='online'?(gs.currentPlayer===gs.myPeerIdx):!gs.players[gs.currentPlayer].isAI;
+  const canDeck=isMyTurn&&gs.phase==='draw'&&!gs.confirmDraw;
+  const canDisc=isMyTurn&&gs.phase==='draw'&&!gs.confirmDraw;
+  return`<div class="ctr">
+    <div class="dpile">
+      <div class="plbl">Discard 1</div>
+      ${discardTop(0,canDisc)}
+    </div>
+    <div class="dpile">
+      <div class="plbl">Deck (${gs.deck.length})</div>
+      ${deckHTML(gs.deck.length,canDeck)}
+    </div>
+    <div class="dpile">
+      <div class="plbl">Discard 2</div>
+      ${discardTop(1,canDisc)}
+    </div>
+  </div>`;}
+
+function discardTop(idx,clickable){const gs=GS;
+  if(!gs.discardPiles[idx].length) return `<div class="empty-pile">Empty</div>`;
+  const top=gs.discardPiles[idx][gs.discardPiles[idx].length-1];
+  return cardHTML(top,{glow:clickable,noHov:!clickable,clickFn:clickable?`doTakeDiscard(${idx})`:''});}
+
+function statusBar(){const gs=GS;const cp=gs.players[gs.currentPlayer];
+  const isMyTurn=gs.mode==='online'?(gs.currentPlayer===gs.myPeerIdx):!cp.isAI;
+  let msg='';
+  if(gs.aiThinking) msg=`${cp.name} is thinking<span class="dots"><span>.</span><span>.</span><span>.</span></span>`;
+  else if(!isMyTurn) msg=`Waiting for ${cp.name}…`;
+  else switch(gs.phase){
+    case'draw': msg='Your turn — draw 2 from deck (keep 1) · OR take the top card of a discard pile'; break;
+    case'playDuos': {
+      const d=aiFindDuos(cp.hand);
+      msg=d.length?'Select 2 matching cards to play a duo pair, then tap PLAY DUO · or SKIP':'No duo pairs — tap SKIP to end turn';
+      break;}
+    case'endChoice': msg=`${getCardScore(cp)} points — call STOP, LAST CHANCE, or continue`; break;
+  }
+  return`<div class="statusbar">${msg}</div>`;}
+
+function actionBtns(){const gs=GS;const cp=gs.players[gs.currentPlayer];
+  const isMyTurn=gs.mode==='online'?(gs.currentPlayer===gs.myPeerIdx):!cp.isAI;
+  if(!isMyTurn) return '';
+  let btns='';
+  if(gs.phase==='playDuos'){
+    const sel=gs.selectedCards;
+    if(sel.length===2){
+      const c1=cp.hand.find(c=>c.id===sel[0]),c2=cp.hand.find(c=>c.id===sel[1]);
+      if(c1&&c2&&isValidDuo(c1,c2)) btns+=`<button class="btn green sm" onclick="doPlayDuo(${sel[0]},${sel[1]})">▶ PLAY DUO</button>`;
+    }
+    btns+=`<button class="btn sm" onclick="finishDuoPhase()">SKIP / DONE ›</button>`;
+  }
+  if(gs.phase==='endChoice'){
+    const pts=getCardScore(cp);
+    if(pts>=7&&!gs.callType){
+      btns+=`<button class="btn red sm" onclick="doEndTurn('stop')">🛑 STOP</button>`;
+      btns+=`<button class="btn gold sm" onclick="doEndTurn('lastChance')">⚡ LAST CHANCE</button>`;
+    }
+    btns+=`<button class="btn sm" onclick="doEndTurn('pass')">CONTINUE →</button>`;
+  }
+  return btns?`<div class="actbtns">${btns}</div>`:'';}
+
+function stopLastChanceBar(humanIdx){const gs=GS;const cp=gs.players[gs.currentPlayer];
+  const isMyTurn=gs.mode==='online'?(gs.currentPlayer===gs.myPeerIdx):!cp.isAI;
+  if(!isMyTurn||gs.screen!=='game') return '';
+  const pts=getCardScore(cp);
+  const canCall=pts>=7&&!gs.callType;
+  return`<div class="stop-bar">
+    <div class="pts-display">Current: ${pts} pts</div>
+    <button class="btn red sm${canCall?'':" off"}" onclick="doEndTurn('stop')" ${canCall?'':'disabled'}>
+      ${canCall?'🛑 STOP':'🛑 STOP (need 7)'}</button>
+    <button class="btn gold sm${canCall?'':" off"}" onclick="doEndTurn('lastChance')" ${canCall?'':'disabled'}>
+      ${canCall?'⚡ LAST CHANCE':'⚡ LAST CHANCE (need 7)'}</button>
+  </div>`;}
+
+function handArea(humanIdx){const gs=GS;const p=gs.players[humanIdx];
+  const isCP=humanIdx===gs.currentPlayer;
+  const isMyTurn=gs.mode==='online'?(gs.currentPlayer===gs.myPeerIdx):!p.isAI;
+  const canSel=isCP&&isMyTurn&&gs.phase==='playDuos';
+  return`<div class="hand-area">
+    <span class="hand-lbl">
+      ${p.isAI?'🤖':'👤'} ${p.name} — Hand (${p.hand.length} cards)
+      ${isCP?'<span style="color:var(--gold);font-size:7px"> ◀ YOUR TURN</span>':''}
+    </span>
+    ${p.played.length?`<div class="played-zone">
+      <span class="pz-lbl">Played cards — ${getCardScore({hand:[],played:p.played})} pts from played</span>
+      <div class="card-row">${p.played.map(c=>cardHTML(c,{size:'sm',noHov:true})).join('')}</div>
+    </div>`:''}
+    <div class="card-row">
+      ${p.hand.map(c=>{
+        const isSel=gs.selectedCards.includes(c.id);
+        return cardHTML(c,{sel:isSel,clickFn:canSel?`toggleSel(${c.id})`:'',noHov:!canSel});
+      }).join('')}
+    </div>
+  </div>`;}
+
+/* ===== MODAL RENDERS ===== */
+function chooseKeepModal(){const gs=GS;return`
+  <div class="ovl"><div class="modal">
+    <h2>KEEP WHICH CARD?</h2>
+    <p>Tap the card you want to keep. The other goes to a discard pile.</p>
+    <div style="display:flex;gap:18px;justify-content:center;margin:14px 0">
+      ${gs.drawn.map((c,i)=>`<div onclick="doKeepCard(${i})" style="cursor:pointer">${cardHTML(c,{})}</div>`).join('')}
+    </div>
+  </div></div>`;}
+
+function chooseDiscardModal(){const gs=GS;const c=gs.cardToDiscard;return`
+  <div class="ovl"><div class="modal">
+    <h2>DISCARD TO WHICH PILE?</h2>
+    <div style="margin:10px auto;display:inline-block">${c?cardHTML(c,{noHov:true}):''}</div>
+    <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
+      ${[0,1].map(i=>`<button class="btn sm" onclick="doDiscardTo(${i})">
+        Pile ${i+1}<br><span style="font-size:7px">${gs.discardPiles[i].length>0?gs.discardPiles[i][gs.discardPiles[i].length-1].icon+' '+gs.discardPiles[i][gs.discardPiles[i].length-1].name:'(empty)'}</span>
+      </button>`).join('')}
+    </div>
+  </div></div>`;}
+
+function drawConfirmModal(){const gs=GS;
+  if(!gs.confirmDraw) return '';
+  if(gs.confirmDraw.source==='deck'){
+    return`<div class="ovl"><div class="modal">
+      <h2>DRAW FROM DECK?</h2>
+      <p>Draw 2 cards from the deck and keep 1?</p>
+      <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
+        <button class="btn green sm" onclick="confirmDrawAction()">✔ CONFIRM</button>
+        <button class="btn sm" onclick="cancelDrawAction()">✕ CANCEL</button>
+      </div>
+    </div></div>`;
+  } else if(gs.confirmDraw.source==='discard'){
+    const pi=gs.confirmDraw.pileIdx;
+    const topCard=gs.discardPiles[pi].length>0?gs.discardPiles[pi][gs.discardPiles[pi].length-1]:null;
+    return`<div class="ovl"><div class="modal">
+      <h2>TAKE FROM DISCARD?</h2>
+      <p>Take the top card from Discard Pile ${pi+1}?</p>
+      ${topCard?`<div style="margin:10px 0;display:flex;justify-content:center">${cardHTML(topCard,{noHov:true})}</div>`:''}
+      <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
+        <button class="btn green sm" onclick="confirmDiscardDraw()">✔ CONFIRM</button>
+        <button class="btn sm" onclick="cancelDiscardDraw()">✕ CANCEL</button>
+      </div>
+    </div></div>`;
+  }
+  return '';
+}
+
+function fishModal(){const gs=GS;
+  if(!gs.fishTopCard) return `<div class="ovl"><div class="modal"><h2>No cards in deck!</h2>
+    <button class="btn sm" onclick="doPlayFishCard(false)">OK</button></div></div>`;
+  return`<div class="ovl"><div class="modal">
+    <h2>🐟 FISH PAIR!</h2>
+    <p>Take this card?</p>
+    <div style="margin:14px 0;display:flex;justify-content:center">${cardHTML(gs.fishTopCard,{noHov:true})}</div>
+    <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
+      <button class="btn green sm" onclick="doPlayFishCard(true)">✔ TAKE</button>
+      <button class="btn sm" onclick="doPlayFishCard(false)">✕ LEAVE</button>
+    </div>
+  </div></div>`;}
+
+function crabPileModal(){const gs=GS;return`
+  <div class="ovl"><div class="modal">
+    <h2>🦀 CRAB PAIR!</h2>
+    <p>Choose which discard pile to look through:</p>
+    <div style="display:flex;gap:14px;justify-content:center;margin:12px 0">
+      ${[0,1].filter(i=>gs.discardPiles[i].length>0).map(i=>`
+        <button class="btn sm" onclick="GS.crabPileIdx=${i};GS.phase='duoFx_crab';render()">
+          Pile ${i+1}<br><span style="font-size:7px">${gs.discardPiles[i].length} cards</span>
+        </button>`).join('')}
+    </div>
+  </div></div>`;}
+
+function crabModal(){const gs=GS;const pile=gs.discardPiles[gs.crabPileIdx];
+  if(!pile||!pile.length)return`<div class="ovl"><div class="modal"><h2>Pile is empty!</h2>
+    <button class="btn sm" onclick="GS.phase='playDuos';render()">OK</button></div></div>`;
+  return`<div class="ovl"><div class="modal">
+    <h2>🦀 CRAB PAIR!</h2>
+    <p>Browse Pile ${gs.crabPileIdx+1} — tap any card to take it.</p>
+    <div class="crab-browser">
+      ${pile.map(c=>`<div onclick="pickCrabCard(${c.id},${gs.crabPileIdx})" style="cursor:pointer">${cardHTML(c,{})}</div>`).join('')}
+    </div>
+    <button class="btn sm" style="margin-top:10px" onclick="GS.phase='playDuos';render()">CANCEL</button>
+  </div></div>`;}
+
+function stealModal(){const gs=GS;
+  const targets=gs.players.filter((_,i)=>i!==gs.currentPlayer&&gs.players[i].hand.length>0);
+  return`<div class="ovl"><div class="modal">
+    <h2>🏊🦈 SWIMMER + SHARK!</h2>
+    <p>Choose an opponent to steal from:</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0">
+      ${targets.map(p=>{
+        const i=gs.players.indexOf(p);
+        return p.protected
+          ?`<button class="btn sm off">🛡️ ${p.name}</button>`
+          :`<button class="btn purple sm" onclick="doStealFrom(${i})">STEAL FROM ${p.name}<br><span style="font-size:6px">(${p.hand.length} cards)</span></button>`;
+      }).join('')}
+    </div>
+    <button class="btn sm" onclick="GS.phase='playDuos';render()">CANCEL</button>
+  </div></div>`;}
+
+function zoomCardModal(){const gs=GS;
+  if(gs.zoomCard===null) return '';
+  const card=gs.cardRegistry[gs.zoomCard];
+  if(!card) return '';
+  return`<div class="zoom-ovl" onclick="closeZoom()">
+    <div class="zoom-card-container" onclick="event.stopPropagation()">
+      ${cardHTML(card,{isZoom:true})}
+    </div>
+  </div>`;}
+
+/* ===== ROUND END ===== */
+function roundEndScreen(){const gs=GS;const sc=gs.roundScores||[];
+  const maxPts=Math.max(...sc.map(s=>s.roundPts));
+  return`<div class="ovl" style="position:relative">
+    <div class="modal" style="max-width:600px">
+      <h2>ROUND ${gs.roundNum} ENDS</h2>
+      <p>${gs.callType==='stop'?`🛑 STOP called by ${gs.players[gs.caller]?.name}`:
+         gs.callType==='lastChance'?`⚡ LAST CHANCE by ${gs.players[gs.caller]?.name}`:
+         'The deck ran out!'}</p>
+      ${gs.callType==='lastChance'&&sc.length?`<p style="color:${sc[gs.caller]?.betResult==='won'?'var(--gold)':'var(--coral)'}">
+        ${gs.players[gs.caller]?.name} ${sc[gs.caller]?.betResult==='won'?'BET WON 🏆':'BET LOST 💸'}
+      </p>`:''}
+      <table class="score-tbl">
+        <tr style="font-size:7px;color:var(--teal)"><td>Player</td><td>Cards</td><td>Color</td><td>+Round</td><td>Total</td></tr>
+        ${sc.map(s=>{const p=gs.players[s.playerIndex];const win=s.roundPts===maxPts;return`
+          <tr${win?' class="win-row"':''}><td>${p.name}${s.instantWin?' 🧜 MERMAID WIN!':''}</td>
+          <td>${s.cardPts}</td><td>${s.colorBon}</td>
+          <td style="color:var(--gold)">+${Math.min(s.roundPts,99)}</td>
+          <td style="color:var(--teal)">${p.totalScore}</td></tr>`}).join('')}
+      </table>
+      <div style="margin-top:8px">
+        ${gs.players.map(p=>`<details style="text-align:left;margin:4px 0">
+          <summary style="font-size:7px;cursor:pointer;color:var(--sand)">${p.name}'s cards</summary>
+          <div class="card-row" style="margin:4px 0">${getAllCards(p).map(c=>cardHTML(c,{size:'xs',noHov:true})).join('')}</div>
+        </details>`).join('')}
+      </div>
+      <button class="btn green" style="margin-top:14px" onclick="nextRound()">
+        ${checkGameOver()?'SEE FINAL RESULTS →':'NEXT ROUND →'}
+      </button>
+    </div>
+  </div>`;}
+
+function gameOverScreen(){const gs=GS;
+  const sorted=[...gs.players].sort((a,b)=>b.totalScore-a.totalScore);
+  return`<div class="ovl" style="position:relative">
+    <div class="modal">
+      <div style="font-size:40px;margin-bottom:10px">🏆</div>
+      <h2>GAME OVER!</h2>
+      <p style="color:var(--gold);font-size:14px">${sorted[0].name} WINS!</p>
+      <table class="score-tbl">
+        ${sorted.map((p,i)=>`<tr${i===0?' class="win-row"':''}>
+          <td>${i===0?'👑 ':''}${p.name}</td>
+          <td style="color:var(--gold)">${p.totalScore} pts</td>
+        </tr>`).join('')}
+      </table>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:18px">
+        <button class="btn green" onclick="beginGame()">PLAY AGAIN</button>
+        <button class="btn sm" onclick="GS.screen='title';render()">MAIN MENU</button>
+      </div>
+    </div>
+  </div>`;}
+
+function rulesScreen(){return`
+  <div class="rules-sc">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h2>HOW TO PLAY</h2>
+      <button class="btn sm" onclick="GS.screen='title';render()">← BACK</button>
+    </div>
+    <div class="panel">
+      <h3>SETUP</h3>
+      <p>Shuffle all 58 cards. Reveal the first 2 cards face-up and place one on each discard pile. Choose first player randomly.</p>
+    </div>
+    <div class="panel">
+      <h3>ON YOUR TURN</h3>
+      <p><b>Step 1 — Add a card to your hand</b> (choose one):</p>
+      <ul>
+        <li>Draw the <b>top 2 cards from deck</b>, keep 1, discard 1 face-up (must fill empty pile first)</li>
+        <li>Take the <b>top card from one discard pile</b> (just that one card)</li>
+      </ul>
+      <p><b>Step 2 — Play duo pairs</b> (optional): place matching pairs face-up in front of you and trigger their effect.</p>
+      <p>If you now have <b>7+ points</b>, you may end the round.</p>
+    </div>
+    <div class="panel">
+      <h3>DUO CARD EFFECTS (1pt per card in pair)</h3>
+      <div class="ref-grid">
+        <div class="ref-item"><div class="ri">🦀🦀</div><b>Crab pair:</b> Browse a discard pile (without shuffling), pick any card.</div>
+        <div class="ref-item"><div class="ri">⛵⛵</div><b>Boat pair:</b> Take another full turn immediately.</div>
+        <div class="ref-item"><div class="ri">🐟🐟</div><b>Fish pair:</b> Draw the top card from the deck.</div>
+        <div class="ref-item"><div class="ri">🏊🦈</div><b>Swimmer+Shark:</b> Steal a random card from an opponent.</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>COLLECTOR CARDS (sets score more as you collect)</h3>
+      <div class="ref-grid">
+        <div class="ref-item"><b>🐚 Shells ×6</b><br>1=0 · 2=2 · 3=4<br>4=6 · 5=8 · 6=10</div>
+        <div class="ref-item"><b>🐙 Octopus ×5</b><br>1=0 · 2=3 · 3=6<br>4=9 · 5=12</div>
+        <div class="ref-item"><b>🐧 Penguins ×3</b><br>1=1 · 2=3 · 3=5</div>
+        <div class="ref-item"><b>⚓ Sailors ×2</b><br>1=0 · 2=5</div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>BONUS MULTIPLIER CARDS ×1 each</h3>
+      <div class="ref-grid">
+        <div class="ref-item"><div class="ri">🗼</div>Lighthouse: +1 pt per ⛵ boat card you have</div>
+        <div class="ref-item"><div class="ri">🐠</div>Shoal: +1 pt per 🐟 fish card you have</div>
+        <div class="ref-item"><div class="ri">🏔️</div>Colony: +2 pts per 🐧 penguin you have</div>
+        <div class="ref-item"><div class="ri">🎖️</div>Captain: +3 pts per ⚓ sailor you have</div>
+      </div>
+      <p style="font-size:6px">These don't count as the card type they multiply.</p>
+    </div>
+    <div class="panel">
+      <h3>MERMAIDS 🧜 ×4</h3>
+      <p>Each mermaid = # cards of your most common color. Each mermaid must use a different color. Collect all 4 → <b style="color:var(--gold)">instant win!</b></p>
+    </div>
+    <div class="panel">
+      <h3>ENDING A ROUND</h3>
+      <p><b style="color:var(--coral)">STOP:</b> Everyone scores their card points only. No color bonus.</p>
+      <p><b style="color:var(--gold)">LAST CHANCE:</b> Other players each take one final turn (hand is revealed and protected from steal). Then:</p>
+      <ul>
+        <li><b style="color:var(--gold)">Caller wins bet</b> (highest or tied): caller gets cards + color bonus. Others get only color bonus.</li>
+        <li><b style="color:var(--coral)">Caller loses bet</b>: caller gets only color bonus. Others get their card points.</li>
+      </ul>
+      <p><b>Color bonus</b> = number of cards in your most common color.</p>
+    </div>
+    <div class="panel">
+      <h3>WINNING</h3>
+      <p>2 players → 40 pts · 3 players → 35 pts · 4 players → 30 pts</p>
+      <p>Most points after someone hits the threshold wins.</p>
+    </div>
+  </div>`;}
+
+/* ===== LAUNCH ===== */
+render();
+</script>
+</body>
+</html>
